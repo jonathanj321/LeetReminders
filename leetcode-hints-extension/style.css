@@ -1,0 +1,11 @@
+#custom-hint-box {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+#custom-hint-box textarea {
+  font-family: inherit;
+  font-size: 14px;
+}

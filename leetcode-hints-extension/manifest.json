@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "LeetCode Custom Hints",
+  "version": "1.0",
+  "description": "Add personal custom hints to LeetCode problems.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://leetcode.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://leetcode.com/problems/*"],
+      "js": ["content.js"],
+      "css": ["style.css"]
+    }
+  ]
+}
