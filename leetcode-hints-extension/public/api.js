@@ -126,26 +126,105 @@ async function loadHint(hintNumber) {
     }
 }
 
+/**
+ * MAIN FUNCTION: Called when user clicks "Get Hint"
+ * 1. Fetches top community solution (if possible)
+ * 2. Calls Lambda (which handles Cache check + AI Generation)
+ */
 async function generateAIHints(problemText) {
-    const problemSlug = getProblemIdFromUrl(); // Re-use your helper
+    console.log("Starting Hint Process...");
 
+    const problemSlug = getProblemIdFromUrl();
+
+    let topSolution = null;
     try {
-        // We use the same BASE_URL but payload differentiates the action for your Lambda
-        const response = await fetch(`${API_CONFIG.BASE_URL}`, {
+        topSolution = await fetchTopCommunitySolution(problemSlug);
+    } catch (e) {
+        console.warn("Could not fetch community solution, using fallback.", e);
+    }
+
+    //Lambda Call
+    try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GENERATE}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 problemSlug: problemSlug,
-                problemText: problemText
+                problemText: problemText,
+                topSolution: topSolution
             })
         });
 
-        if (!response.ok) throw new Error('Generation failed');
+        if (!response.ok) throw new Error('Lambda call failed');
 
         const data = await response.json();
-        return data.hints; // Expecting ["Hint 1...", "Hint 2...", "Hint 3..."]
+
+        console.log(`✅ Success! Source: ${data.source}`);
+        return data.hints; // Returns ["Hint 1", "Hint 2", "Hint 3"]
+
     } catch (error) {
-        console.error('AI Generation Error:', error);
+        console.error('Error getting hints:', error);
         return null;
     }
+}
+
+
+async function fetchTopCommunitySolution(problemSlug) {
+    console.log(`🕵️ Hunting for 'Most Voted' solution for: ${problemSlug}...`);
+
+    const csrfToken = document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+    if (!csrfToken) {
+        console.error("❌ No CSRF token. Are you logged in?");
+        return null;
+    }
+
+    const query = `
+    query communitySolutions($questionSlug: String!, $skip: Int!, $first: Int!, $query: String, $orderBy: TopicSortingOption, $languageTags: [String!], $topicTags: [String!]) {
+      questionSolutions(
+        filters: {questionSlug: $questionSlug, skip: $skip, first: $first, query: $query, orderBy: $orderBy, languageTags: $languageTags, topicTags: $topicTags}
+      ) {
+        solutions {
+          id
+          title
+          post {
+            content
+          }
+        }
+      }
+    }
+    `;
+
+    const response = await fetch('https://leetcode.com/graphql', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-csrftoken': csrfToken
+        },
+        body: JSON.stringify({
+            query: query,
+            variables: {
+                query: "",
+                languageTags: [],
+                topicTags: [],
+                questionSlug: problemSlug,
+                skip: 0,
+                first: 1,
+                orderBy: "most_votes" // Sorting by Most Votes
+            }
+        })
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const solution = data.data?.questionSolutions?.solutions?.[0];
+
+    if (solution) {
+        console.log("Found Solution:", solution.title);
+        return solution.post.content;
+    }
+    return null;
 }

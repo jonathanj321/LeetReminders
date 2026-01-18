@@ -1,7 +1,7 @@
 function getUserId() {
     const loginButton = document.querySelector('a[href="/accounts/login/"]');
     const signUpButton = document.querySelector('a[href="/accounts/signup/"]');
-    
+
     if (loginButton || signUpButton) {
         let anonId = localStorage.getItem('leetcode_hints_anon_id');
         if (!anonId) {
@@ -11,11 +11,11 @@ function getUserId() {
         return anonId;
     }
 
-    const usernameElement = document.querySelector('[data-cy="user-avatar"]') || 
-                           document.querySelector('img[alt*="avatar"]') ||
-                           document.querySelector('.nav-user-pic-container img') ||
-                           document.querySelector('[data-testid="user-menu"] img');
-    
+    const usernameElement = document.querySelector('[data-cy="user-avatar"]') ||
+        document.querySelector('img[alt*="avatar"]') ||
+        document.querySelector('.nav-user-pic-container img') ||
+        document.querySelector('[data-testid="user-menu"] img');
+
     if (usernameElement) {
         const altText = usernameElement.alt;
         if (altText && altText.includes('avatar')) {
@@ -25,7 +25,7 @@ function getUserId() {
             }
         }
     }
-    
+
     const profileLink = document.querySelector('a[href^="/u/"]');
     if (profileLink) {
         const match = profileLink.href.match(/\/u\/([^\/]+)/);
@@ -41,3 +41,9 @@ function getProblemIdFromUrl() {
     return match ? match[1] : 'unknown';
 }
 
+// Helper to grab the problem text from LeetCode's DOM
+function getProblemDescription() {
+    const descriptionEl = document.querySelector('div[data-track-load="description_content"]');
+    if (!descriptionEl) return null;
+    return descriptionEl.innerText;
+}

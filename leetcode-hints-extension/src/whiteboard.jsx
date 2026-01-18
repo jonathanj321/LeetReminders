@@ -1,3 +1,4 @@
+//source code for actual editing
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Tldraw } from 'tldraw';
@@ -74,8 +75,9 @@ const App = () => {
             </div>
 
             <Tldraw
-                persistenceKey={`lc-drawing-${problemId}`}
+                persistenceKey={`lc-drawing-v3-${problemId}`}
                 onMount={(editorInstance) => {
+                    // This will print the version object to your browser console
                     setEditor(editorInstance);
                     editorInstance.setCurrentTool('draw');
 
