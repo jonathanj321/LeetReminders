@@ -15,7 +15,7 @@ function createHintsList() {
 
         const { container, contentWrapper, innerContainer } = createHintSection(i);
         hintsList.appendChild(container);
-        
+
         loadHint(i).then(savedText => {
             if (savedText) {
                 createSavedContent(i, innerContainer, contentWrapper, savedText);
@@ -31,12 +31,13 @@ function createHintsList() {
 
 function addHintTextbox() {
     const targetContainer = document.querySelector('div.mt-6.flex.flex-col.gap-3');
-    
+
     if (!targetContainer || targetContainer.querySelector('[data-hint-textbox]')) {
         return;
     }
 
     const mainHeaderContainer = document.createElement('div');
+    mainHeaderContainer.setAttribute('data-leetreminders-panel', 'true');
     const mainHeader = document.createElement('div');
     mainHeader.className = 'text-body group flex cursor-pointer items-center gap-2 transition-colors';
 
@@ -73,8 +74,9 @@ function addHintTextbox() {
             arrowSvg.style.transform = 'rotate(0deg)';
         }
     };
-    
+
     const newDivider = document.createElement('hr');
+    newDivider.setAttribute('data-leetreminders-divider', 'true');
     newDivider.className = 'border-divider-3 dark:border-dark-divider-3';
 
     const referenceDivider = targetContainer.querySelector('hr:nth-child(17)');
@@ -92,19 +94,6 @@ function addHintTextbox() {
 
 function initializeHintTextbox() {
     addHintTextbox();
-    
-    let currentUrl = window.location.href;
-    const observer = new MutationObserver(() => {
-        if (window.location.href !== currentUrl) {
-            currentUrl = window.location.href;
-            setTimeout(addHintTextbox, 1000);
-        }
-    });
-    
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
 }
 
 if (document.readyState === 'loading') {
@@ -112,3 +101,46 @@ if (document.readyState === 'loading') {
 } else {
     initializeHintTextbox();
 }
+
+// --- SPA NAVIGATION HANDLER ---
+
+let currentProblemSlug = null;
+
+/**
+ * Extracts problem name from "/problems/<problem_name>/"
+ */
+function getProblemSlug() {
+    const match = window.location.pathname.match(/\/problems\/([^/]+)/);
+    return match ? match[1] : null;
+}
+
+function checkUrlChange() {
+    const newSlug = getProblemSlug();
+
+    if (!newSlug) return;
+
+    if (newSlug === currentProblemSlug) return;
+
+    console.log(`New Problem Detected: ${newSlug} (Old: ${currentProblemSlug})`);
+    currentProblemSlug = newSlug;
+
+    const oldPanel = document.querySelector('[data-leetreminders-panel]');
+    if (oldPanel) {
+        oldPanel.remove();
+    }
+
+    const oldDivider = document.querySelector('[data-leetreminders-divider]');
+    if (oldDivider) {
+        oldDivider.remove();
+    }
+
+    if (oldPanel || oldDivider) {
+        console.log("🧹 Cleaned up old hints panel and divider.");
+    }
+
+    initializeHintTextbox();
+}
+
+setInterval(checkUrlChange, 1000);
+
+checkUrlChange();
